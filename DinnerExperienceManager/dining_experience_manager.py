@@ -49,14 +49,14 @@ class DiningExperienceManager:
         return True
 
     def apply_special_meal_surcharge(self, total_cost, order):
-        for item, quantity in order.get_items().items():
-            if isinstance(item, SpecialMeal):
-                total_cost += item.get_price() * quantity * item.get_surcharge()
-        return total_cost
+        special_meals = [meal for meal in order.get_items().keys() if isinstance(meal, SpecialMeal)]
+        surcharge_amount = sum(
+            meal.get_price() * order.get_items()[meal] * (1 + meal.get_surcharge()) for meal in special_meals)
+        return round(total_cost + surcharge_amount,2)
 
     def validate_meal_availability(self, order, menu):
         for item, quantity in order.get_items().items():
-            if item not in menu:
+            if item not in [meal.name for meal in menu]:
                 return False
         return True
 

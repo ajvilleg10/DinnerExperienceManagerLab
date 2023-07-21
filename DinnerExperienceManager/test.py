@@ -59,9 +59,10 @@ def test_validate_quantities_exceeded_max_order_quantity():
 def test_apply_special_meal_surcharge():
     manager = DiningExperienceManager()
     order = NormalOrder()
-    order.add_item(SpecialMeal("Chef's Special Soup", 7.5, 0.1), 1)
-    order.add_item(SpecialMeal("Chef's Special Pasta", 12.0, 0.1), 2)
-    assert manager.apply_special_meal_surcharge(0.0, order) == (1 * 7.5 + 2 * 12.0) * 1.05
+    order.add_item(SpecialMeal("Chef's Special Soup", 7.5, 0.10), 1)  # Recargo del 10%
+    order.add_item(SpecialMeal("Chef's Special Pasta", 12.0, 0.10), 2)  # Recargo del 10%
+    expected_total_cost = (1 * 7.5 + 2 * 12.0) * 1.10  # 10% de recargo
+    assert manager.apply_special_meal_surcharge(0.0, order) == round(expected_total_cost,2)
 
 def test_validate_meal_availability_valid():
     manager = DiningExperienceManager()
