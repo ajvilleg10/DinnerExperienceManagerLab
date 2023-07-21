@@ -8,3 +8,4 @@ class Meal:
 
     def get_price(self):
         return self.price
+

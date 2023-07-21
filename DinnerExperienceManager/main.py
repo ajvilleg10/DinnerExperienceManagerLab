@@ -1,8 +1,7 @@
 from dining_experience_manager import DiningExperienceManager
 
-def main():
-    manager = DiningExperienceManager()
-    manager.process_order()
-
 if __name__ == "__main__":
-    main()
+    manager = DiningExperienceManager()
+    total_cost = manager.process_order()
+    if total_cost != -1:
+        print("Thank you for your order! Enjoy your meal.")

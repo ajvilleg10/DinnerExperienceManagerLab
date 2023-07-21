@@ -1,104 +1,74 @@
-from order import NormalOrder, Discount5OrMoreOrder, Discount10OrMoreOrder
+from DinnerExperienceManager.normal_order import NormalOrder
+from DinnerExperienceManager.special_meal import SpecialMeal
 from menu import Menu
-from special_meal import SpecialMeal
-from error_handler import ErrorHandler
+from order import Order
+
 
 class DiningExperienceManager:
-    SPECIAL_OFFER_DISCOUNT_50 = 10.0
-    SPECIAL_OFFER_DISCOUNT_100 = 25.0
+    MAX_ORDER_QUANTITY = 100
 
-    def __init__(self):
-        self.MAX_ORDER_QUANTITY = 100
+    def get_menu(self):
+        return Menu.get_menu()
 
     def display_menu(self, menu):
-        print("Menu Options:")
-        for i, meal in enumerate(menu, 1):
-            print(f"{i}. {meal.get_name()} - ${meal.get_price()}")
+        print("Menu:")
+        for item in menu:
+            print(f"{item.get_name()} - ${item.get_price()}")
 
     def get_order(self, menu):
-        order = NormalOrder()  # Default order without any discounts
+        order = NormalOrder()
+        print("Please select the meals you want to order and enter the quantity (0 to finish):")
+        while True:
+            for i, meal in enumerate(menu, 1):
+                print(f"{i}. {meal.get_name()} (${meal.get_price()})")
 
-        self.display_menu(menu)
-
-        print("Enter the quantity for each meal (0 to skip):")
-        for i, meal in enumerate(menu, 1):
-            quantity = int(input(f"{meal.get_name()}: "))
-            if quantity > 0:
-                order.add_item(meal, quantity)
-
-        total_quantity = order.get_total_quantity()
-        if total_quantity >= 10:
-            order = Discount10OrMoreOrder()
-        elif total_quantity >= 5:
-            order = Discount5OrMoreOrder()
+            try:
+                choice = int(input("Enter the meal number: "))
+                if choice == 0:
+                    break
+                elif 1 <= choice <= len(menu):
+                    meal = menu[choice - 1]
+                    quantity = int(input("Enter the quantity: "))
+                    if quantity > 0:
+                        order.add_item(meal, quantity)
+                    else:
+                        print("Invalid quantity. Please enter a positive integer.")
+                else:
+                    print("Invalid choice. Please enter a valid meal number.")
+            except ValueError:
+                print("Invalid input. Please enter a valid meal number.")
 
         return order
 
-    @staticmethod
-    def apply_special_offer_discount(total_cost):
-        if total_cost > 100:
-            total_cost -= DiningExperienceManager.SPECIAL_OFFER_DISCOUNT_100
-        elif total_cost > 50:
-            total_cost -= DiningExperienceManager.SPECIAL_OFFER_DISCOUNT_50
-        return total_cost
+    def validate_quantities(self, order):
+        for item, quantity in order.get_items().items():
+            if quantity <= 0:
+                return False
+            if quantity > self.MAX_ORDER_QUANTITY:
+                return False
+        return True
 
-    @staticmethod
-    def apply_special_meal_surcharge(total_cost, order):
-        for meal, quantity in order.get_items().items():
-            if isinstance(meal, SpecialMeal):
-                total_cost += meal.get_surcharge() * meal.get_price() * quantity
+    def apply_special_meal_surcharge(self, total_cost, order):
+        for item, quantity in order.get_items().items():
+            if isinstance(item, SpecialMeal):
+                total_cost += item.get_price() * quantity * item.get_surcharge()
         return total_cost
 
     def validate_meal_availability(self, order, menu):
-        for meal in order.get_items():
-            if meal not in menu:
-                ErrorHandler.handle_error(f"{meal.get_name()} is not available on the menu.")
+        for item, quantity in order.get_items().items():
+            if item not in menu:
                 return False
         return True
-
-    def validate_quantities(self, order):
-        for quantity in order.get_items().values():
-            if quantity <= 0:
-                ErrorHandler.handle_error("Quantity must be a positive integer greater than zero.")
-                return False
-            if quantity > self.MAX_ORDER_QUANTITY:
-                ErrorHandler.handle_error(f"Maximum order quantity for a meal is {self.MAX_ORDER_QUANTITY}.")
-                return False
-        return True
-
-    def confirm_order(self, order, total_cost):
-        print("Order Summary:")
-        for meal, quantity in order.get_items().items():
-            print(f"{meal.get_name()} x {quantity} - ${meal.get_price() * quantity:.2f}")
-        print(f"Total Cost: ${total_cost:.2f}")
-
-        choice = input("Do you want to confirm the order? (Y/N): ")
-        return choice.upper() == "Y"
 
     def handle_errors(self):
-        ErrorHandler.handle_error("An error occurred. Please check your inputs and try again.")
+        print("An error occurred. Please check your inputs and try again.")
 
     def process_order(self):
-        menu = Menu.get_menu()
+        menu = self.get_menu()
         order = self.get_order(menu)
-
         if not self.validate_quantities(order):
-            self.handle_errors()
-            return
-
+            return -1
         total_cost = order.calculate_total_cost()
-        total_cost = self.apply_special_offer_discount(total_cost)
         total_cost = self.apply_special_meal_surcharge(total_cost, order)
-
-        if not self.validate_meal_availability(order, menu):
-            self.handle_errors()
-            return
-
-        if total_cost == 0:
-            print("Order canceled.")
-            return
-
-        if self.confirm_order(order, total_cost):
-            print(f"Order confirmed. Total Cost: ${total_cost:.2f}")
-        else:
-            print("Order canceled.")
+        print(f"Total cost: ${total_cost:.2f}")
+        return total_cost
